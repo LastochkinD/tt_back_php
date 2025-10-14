@@ -1,3 +1,9 @@
+assets/*
+!assets/.gitignore
+protected/runtime/*
+!protected/runtime/.gitignore
+protected/data/*.db
+themes/classic/views/
 # phpstorm project files
 .idea
 
@@ -42,6 +48,29 @@ tests/_support/_generated
 runtime/**/*.*
 !runtime/.gitignore
 
+assets/*
+!assets/.gitignore
+protected/runtime/*
+!protected/runtime/.gitignore
+protected/data/*.db
+themes/classic/views/
+>>>>>> f51b8540fad5767ffc017388fef6a0325a59fcfa
 # assets
 assets
 !assets/.gitignore
+
+# From original repository
+assets/*
+!assets/.gitignore
+protected/runtime/*
+!protected/runtime/.gitignore
+protected/data/*.db
+themes/classic/views/
+=======
+assets/*
+!assets/.gitignore
+protected/runtime/*
+!protected/runtime/.gitignore
+protected/data/*.db
+themes/classic/views/
+>>>>>>> f51b8540fad5767ffc017388fef6a0325a59fcfa
