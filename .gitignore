@@ -74,3 +74,9 @@ protected/runtime/*
 protected/data/*.db
 themes/classic/views/
 >>>>>>> f51b8540fad5767ffc017388fef6a0325a59fcfa
+cache/
+output/
+public_html_bak_*/
+keys.*.pub
+docker-compose.yml
+public_html
