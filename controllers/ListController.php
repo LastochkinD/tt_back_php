@@ -3,166 +3,239 @@
 namespace app\controllers;
 
 use Yii;
-use yii\web\Controller;
 use app\models\ListEntity;
-use app\components\BoardAccessManager;
+use app\models\BoardAccess;
 
-class ListController extends Controller
+class ListController extends \yii\rest\ActiveController
 {
-    /**
-     * @var \app\components\BoardAccessManager
-     */
-    protected $boardAccessManager;
-
-    public function init()
-    {
-        parent::init();
-        $this->boardAccessManager = Yii::$app->get('boardAccessManager');
-    }
+    public $modelClass = ListEntity::class;
 
     public function behaviors()
     {
-        return [
-            'corsFilter' => [
-                'class' => \yii\filters\Cors::class,
-                'cors' => [
-                    'Origin' => ['*'],
-                    'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
-                    'Access-Control-Request-Headers' => ['*'],
-                    'Access-Control-Allow-Credentials' => null,
-                    'Access-Control-Max-Age' => 86400,
-                    'Access-Control-Expose-Headers' => [],
-                ],
-            ],
-            'authFilter' => [
-                'class' => \app\filters\AuthFilter::class,
+        $behaviors = parent::behaviors();
+
+        // JWT Authentication
+        $behaviors['authenticator'] = [
+            'class' => \app\filters\AuthFilter::class,
+            'except' => ['options'],
+        ];
+
+        // CORS
+        $behaviors['cors'] = [
+            'class' => \yii\filters\Cors::class,
+            'cors' => [
+                'Origin' => ['*'],
+                'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+                'Access-Control-Request-Headers' => ['*'],
+                'Access-Control-Allow-Credentials' => null,
+                'Access-Control-Max-Age' => 86400,
+                'Access-Control-Expose-Headers' => [],
             ],
         ];
+
+        return $behaviors;
+    }
+
+    // Override actions for custom logic
+    public function actions()
+    {
+        $actions = parent::actions();
+        // Customize actions as needed
+        unset($actions['index'], $actions['view'], $actions['create'], $actions['update'], $actions['delete']); // We'll implement these custom
+        return $actions;
     }
 
     public function actionIndex()
     {
-        $userId = Yii::$app->user->id;
+        $boardId = Yii::$app->request->get('board') ?: Yii::$app->request->get('board_id');
 
-        // Handle both GET (query parameters) and POST (request data) methods
-        if (Yii::$app->request->isGet) {
-            $boardId = Yii::$app->request->get('board');
-        } elseif (Yii::$app->request->isPost) {
-            $data = Yii::$app->request->post();
-            $boardId = $data['board'] ?? $data['board_id'] ?? null;
+        if ($boardId) {
+            // Check if user has access to the board
+            $userId = Yii::$app->user->id;
+            if (!Yii::$app->boardAccessManager->canView($boardId, $userId)) {
+                throw new \yii\web\ForbiddenHttpException('Access denied.');
+            }
+
+            $lists = ListEntity::find()
+                ->where(['board_id' => $boardId])
+                ->all();
         } else {
-            return $this->asJson(['error' => 'Method not allowed'])->setStatusCode(405);
+            // Get all lists that user has access to through boards
+            $userId = Yii::$app->user->id;
+            $lists = ListEntity::find()
+                ->joinWith(['board'])
+                ->andWhere([
+                    'OR',
+                    ['boards.user_id' => $userId],
+                    ['exists', BoardAccess::find()->where('{{%board_accesses}}.board_id = {{%lists}}.board_id AND {{%board_accesses}}.user_id = :userId', [':userId' => $userId])]
+                ])
+                ->all();
         }
 
-        if (!$boardId) {
-            return $this->asJson(['error' => 'board parameter is required'])->setStatusCode(400);
+        $result = [];
+        foreach ($lists as $list) {
+            $board = $list->board;
+            $result[] = [
+                'id' => $list->id,
+                'title' => $list->title,
+                'createdAt' => $list->created_at,
+                'BoardId' => $list->board_id,
+                'Board' => [
+                    'id' => $board->id,
+                    'title' => $board->title,
+                    'description' => $board->description,
+                ]
+            ];
         }
 
-        // Check if user has access to the board
-        if (!$this->boardAccessManager->canView($boardId, $userId)) {
-            return $this->asJson(['error' => 'Access denied'])->setStatusCode(403);
+        return $result;
+    }
+
+    public function findModel($id)
+    {
+        $model = ListEntity::findOne($id);
+        if ($model === null) {
+            throw new \yii\web\NotFoundHttpException('List not found');
+        }
+        return $model;
+    }
+
+    public function checkAccess($action, $model = null, $params = [])
+    {
+        $listId = $model ? $model->id : Yii::$app->request->get('id');
+        $list = $model ?: ListEntity::findOne($listId);
+
+        if (in_array($action, ['view'])) {
+            if (!$list || !Yii::$app->boardAccessManager->canView($list->board_id, Yii::$app->user->id)) {
+                throw new \yii\web\ForbiddenHttpException('Access denied.');
+            }
         }
 
-        $lists = ListEntity::find()
-            ->where(['board_id' => $boardId])
-            ->all();
-
-        return $this->asJson($lists);
+        if (in_array($action, ['update', 'delete'])) {
+            if (!$list || !Yii::$app->boardAccessManager->canEdit($list->board_id, Yii::$app->user->id)) {
+                throw new \yii\web\ForbiddenHttpException('Access denied.');
+            }
+        }
     }
 
     public function actionView($id)
     {
-        $userId = Yii::$app->user->id;
+        $model = $this->findModel($id);
+        $this->checkAccess('view', $model);
 
-        $list = ListEntity::find()
-            ->joinWith(['board.boardAccesses'])
-            ->where(['lists.id' => $id])
-            ->andWhere([
-                'OR',
-                ['boards.user_id' => $userId],
-                ['board_accesses.user_id' => $userId]
-            ])
-            ->one();
-
-        if (!$list) {
-            return $this->asJson(['error' => 'List not found or access denied'])->setStatusCode(404);
-        }
-
-        return $this->asJson($list);
+        $board = $model->board;
+        return [
+            'id' => $model->id,
+            'title' => $model->title,
+            'createdAt' => $model->created_at,
+            'BoardId' => $model->board_id,
+            'Board' => [
+                'id' => $board->id,
+                'title' => $board->title,
+                'description' => $board->description,
+            ]
+        ];
     }
 
     public function actionCreate()
     {
         $userId = Yii::$app->user->id;
-        $data = Yii::$app->request->post();
+        $data = json_decode(Yii::$app->request->getRawBody(), true);
+        if (!$data) {
+            $data = Yii::$app->request->getBodyParams();
+        }
+        if (empty($data)) {
+            $data = Yii::$app->request->post();
+        }
         $boardId = $data['board'] ?? $data['board_id'] ?? null;
 
         if (!$boardId) {
-            return $this->asJson(['error' => 'board is required'])->setStatusCode(400);
+            throw new \yii\web\BadRequestHttpException('board or board_id is required. Data: ' . json_encode($data));
+        }
+
+        // Check if board exists
+        if (!\app\models\Board::findOne($boardId)) {
+            throw new \yii\web\NotFoundHttpException('Board not found');
         }
 
         // Check if user can create lists on this board
-        if (!$this->boardAccessManager->canEdit($boardId, $userId)) {
-            return $this->asJson(['error' => 'Access denied'])->setStatusCode(403);
+        if (!Yii::$app->boardAccessManager->canEdit($boardId, $userId)) {
+            throw new \yii\web\ForbiddenHttpException('Access denied.');
         }
 
         $list = new ListEntity();
         $list->load($data, '');
+        $list->board_id = $boardId;
 
-        if ($list->validate() && $list->save()) {
-            return $this->asJson($list)->setStatusCode(201);
+        if ($list->save()) {
+            $board = $list->board;
+            $result = [
+                'id' => $list->id,
+                'title' => $list->title,
+                'createdAt' => $list->created_at,
+                'BoardId' => $list->board_id
+            ];
+            Yii::$app->response->statusCode = 201;
+            return $result;
         } else {
-            return $this->asJson(['errors' => $list->errors])->setStatusCode(400);
+            throw new \yii\web\BadRequestHttpException('Validation error');
         }
     }
 
     public function actionUpdate($id)
     {
-        $userId = Yii::$app->user->id;
-        $data = Yii::$app->request->post();
+        $model = $this->findModel($id);
+        $this->checkAccess('update', $model);
 
-        $list = ListEntity::find()
-            ->joinWith(['board'])
-            ->where(['lists.id' => $id])
-            ->one();
+        $data = json_decode(Yii::$app->request->getRawBody(), true);
+        if (!$data) {
+            $data = Yii::$app->request->getBodyParams();
+        }
+        if (empty($data)) {
+            $data = Yii::$app->request->post();
+        }
+        $newBoardId = $data['board'] ?? $data['board_id'] ?? null;
 
-        if (!$list) {
-            return $this->asJson(['error' => 'List not found'])->setStatusCode(404);
+        // If changing board, check access to new board
+        if ($newBoardId && $newBoardId != $model->board_id) {
+            if (!Yii::$app->boardAccessManager->canEdit($newBoardId, Yii::$app->user->id)) {
+                throw new \yii\web\ForbiddenHttpException('Access denied to target board.');
+            }
+            $model->board_id = $newBoardId;
         }
 
-        // Check access
-        if (!$this->boardAccessManager->canEdit($list->board_id, $userId)) {
-            return $this->asJson(['error' => 'Access denied'])->setStatusCode(403);
-        }
-
-        $list->load($data, '');
-
-        if ($list->validate() && $list->save()) {
-            return $this->asJson($list);
+        $model->load($data, '');
+        if ($model->save()) {
+            $board = $model->board;
+            return [
+                'id' => $model->id,
+                'title' => $model->title,
+                'createdAt' => $model->created_at,
+                'BoardId' => $model->board_id
+            ];
         } else {
-            return $this->asJson(['errors' => $list->errors])->setStatusCode(400);
+            throw new \yii\web\BadRequestHttpException('Validation error: ' . implode(', ', $model->getErrorSummary(true)));
         }
     }
 
     public function actionDelete($id)
     {
-        $userId = Yii::$app->user->id;
+        $model = $this->findModel($id);
+        $this->checkAccess('delete', $model);
 
-        $list = ListEntity::find()
-            ->joinWith(['board'])
-            ->where(['lists.id' => $id])
-            ->one();
-
-        if (!$list) {
-            return $this->asJson(['error' => 'List not found'])->setStatusCode(404);
+        if ($model->delete()) {
+            Yii::$app->response->setStatusCode(200);
+            return ['message' => 'List deleted'];
+        } else {
+            throw new \yii\web\ServerErrorHttpException('Failed to delete the list.');
         }
+    }
 
-        // Check access
-        if (!$this->boardAccessManager->canEdit($list->board_id, $userId)) {
-            return $this->asJson(['error' => 'Access denied'])->setStatusCode(403);
+    public function actionOptions()
+    {
+        if (Yii::$app->getRequest()->getMethod() !== 'OPTIONS') {
+            Yii::$app->getResponse()->setStatusCode(405);
         }
-
-        $list->delete();
-        return $this->asJson(['message' => 'List deleted successfully']);
+        Yii::$app->getResponse()->getHeaders()->set('Allow', 'GET, POST, PUT, DELETE, HEAD, OPTIONS');
     }
 }

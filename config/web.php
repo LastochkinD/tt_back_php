@@ -82,9 +82,9 @@ $config = [
                 'DELETE api/boards/<id>' => 'board/delete',
 
                 // Lists
-                'api/lists' => 'list/index',
-                'api/lists/<id>' => 'list/view',
+                'GET api/lists' => 'list/index',
                 'POST api/lists' => 'list/create',
+                'GET api/lists/<id>' => 'list/view',
                 'PUT api/lists/<id>' => 'list/update',
                 'DELETE api/lists/<id>' => 'list/delete',
 
