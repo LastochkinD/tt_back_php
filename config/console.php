@@ -6,10 +6,6 @@ defined('YII_ENV') or define('YII_ENV', 'dev');
 
 require __DIR__ . '/../vendor/autoload.php';
 
-// Load environment variables
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..', '.env.local');
-$dotenv->load();
-
 $params = require __DIR__ . '/params.php';
 $db = require __DIR__ . '/db.php';
 

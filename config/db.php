@@ -2,9 +2,9 @@
 
 return [
     'class' => 'yii\db\Connection',
-    'dsn' => 'pgsql:host=' . ($_ENV['DB_HOST'] ?? 'localhost') . ';port=' . ($_ENV['DB_PORT'] ?? '5432') . ';dbname=' . ($_ENV['DB_NAME'] ?? ''),
-    'username' => $_ENV['DB_USER'] ?? '',
-    'password' => $_ENV['DB_PASS'] ?? '',
+    'dsn' => 'pgsql:host=pg4.sweb.ru;port=5433;dbname=romablunt_trck',
+    'username' => 'romablunt_trck',
+    'password' => 'Samara2025',
     'charset' => 'UTF8',
     'tablePrefix' => '',
     'enableSchemaCache' => true,
