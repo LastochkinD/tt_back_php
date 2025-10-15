@@ -89,15 +89,15 @@ $config = [
                 'DELETE api/lists/<id>' => 'list/delete',
 
                 // Cards
-                'api/cards' => 'card/index',
-                'api/cards/<id>' => 'card/view',
+                'GET api/cards' => 'card/index',
+                'GET api/cards/<id>' => 'card/view',
                 'POST api/cards' => 'card/create',
                 'PUT api/cards/<id>' => 'card/update',
                 'DELETE api/cards/<id>' => 'card/delete',
 
                 // Comments
-                'api/comments/card/<cardId>' => 'comment/card-comments',
-                'api/comments/<id>' => 'comment/view',
+                'GET api/comments/card/<cardId>' => 'comment/card-comments',
+                'GET api/comments/<id>' => 'comment/view',
                 'POST api/comments' => 'comment/create',
                 'PUT api/comments/<id>' => 'comment/update',
                 'DELETE api/comments/<id>' => 'comment/delete',

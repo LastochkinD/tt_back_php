@@ -58,6 +58,7 @@ class ListController extends \yii\rest\ActiveController
 
             $lists = ListEntity::find()
                 ->where(['board_id' => $boardId])
+                ->orderBy(['id' => SORT_ASC])
                 ->all();
         } else {
             // Get all lists that user has access to through boards
@@ -69,6 +70,7 @@ class ListController extends \yii\rest\ActiveController
                     ['boards.user_id' => $userId],
                     ['exists', BoardAccess::find()->where('{{%board_accesses}}.board_id = {{%lists}}.board_id AND {{%board_accesses}}.user_id = :userId', [':userId' => $userId])]
                 ])
+                ->orderBy(['lists.id' => SORT_ASC])
                 ->all();
         }
 

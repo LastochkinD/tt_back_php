@@ -3,29 +3,45 @@
 namespace app\controllers;
 
 use Yii;
-use yii\web\Controller;
 use app\models\Card;
 
-class CardController extends Controller
+class CardController extends \yii\rest\ActiveController
 {
+    public $modelClass = Card::class;
+
     public function behaviors()
     {
-        return [
-            'corsFilter' => [
-                'class' => \yii\filters\Cors::class,
-                'cors' => [
-                    'Origin' => ['*'],
-                    'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
-                    'Access-Control-Request-Headers' => ['*'],
-                    'Access-Control-Allow-Credentials' => null,
-                    'Access-Control-Max-Age' => 86400,
-                    'Access-Control-Expose-Headers' => [],
-                ],
-            ],
-            'authFilter' => [
-                'class' => \app\filters\AuthFilter::class,
+        $behaviors = parent::behaviors();
+
+        // JWT Authentication
+        $behaviors['authenticator'] = [
+            'class' => \app\filters\AuthFilter::class,
+            'except' => ['options'],
+        ];
+
+        // CORS
+        $behaviors['cors'] = [
+            'class' => \yii\filters\Cors::class,
+            'cors' => [
+                'Origin' => ['*'],
+                'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+                'Access-Control-Request-Headers' => ['*'],
+                'Access-Control-Allow-Credentials' => null,
+                'Access-Control-Max-Age' => 86400,
+                'Access-Control-Expose-Headers' => [],
             ],
         ];
+
+        return $behaviors;
+    }
+
+    // Override actions for custom logic
+    public function actions()
+    {
+        $actions = parent::actions();
+        // Customize actions as needed
+        unset($actions['index'], $actions['view'], $actions['create'], $actions['update'], $actions['delete']); // We'll implement these custom
+        return $actions;
     }
 
     public function actionIndex()
@@ -33,152 +49,207 @@ class CardController extends Controller
         $userId = Yii::$app->user->id;
         $listId = Yii::$app->request->get('list');
 
-        if (!$listId) {
-            Yii::$app->response->statusCode = 400;
-            return $this->asJson(['error' => 'list parameter is required']);
+        if ($listId) {
+            // Check if user has access to the board through the list
+            if (!\app\models\ListEntity::find()
+                ->joinWith(['board'])
+                ->where(['lists.id' => $listId])
+                ->andWhere([
+                    'OR',
+                    ['boards.user_id' => $userId],
+                    ['exists', \app\models\BoardAccess::find()->where('{{%board_accesses}}.board_id = {{%lists}}.board_id AND {{%board_accesses}}.user_id = :userId', [':userId' => $userId])]
+                ])
+                ->one()) {
+                throw new \yii\web\ForbiddenHttpException('Access denied.');
+            }
+
+            $cards = Card::find()
+                ->with('list')
+                ->where(['list_id' => $listId])
+                ->orderBy(['id' => SORT_ASC])
+                ->all();
+        } else {
+            // Get all cards that user has access to through boards
+            $cards = Card::find()
+                ->joinWith(['list.board'])
+                ->andWhere([
+                    'OR',
+                    ['boards.user_id' => $userId],
+                    ['exists', \app\models\BoardAccess::find()->where('{{%board_accesses}}.board_id = {{%lists}}.board_id AND {{%board_accesses}}.user_id = :userId', [':userId' => $userId])]
+                ])
+                ->with('list')
+                ->orderBy(['cards.id' => SORT_ASC])
+                ->all();
         }
 
-        // Check if user has access to the board through the list
-        $card = Card::find()
-            ->joinWith(['list.board.boardAccesses'])
-            ->where(['cards.list_id' => $listId])
-            ->andWhere([
-                'OR',
-                ['boards.user_id' => $userId],
-                ['board_accesses.user_id' => $userId]
-            ])
-            ->one();
-
-        if (!$card && Card::find()->where(['list_id' => $listId])->exists()) {
-            Yii::$app->response->statusCode = 403;
-            return $this->asJson(['error' => 'Access denied']);
+        $result = [];
+        foreach ($cards as $card) {
+            $result[] = [
+                'id' => $card->id,
+                'title' => $card->title,
+                'description' => $card->description,
+                'createdAt' => $card->created_at,
+                'ListId' => $card->list_id,
+                'List' => [
+                    'id' => $card->list->id,
+                    'title' => $card->list->title,
+                    'BoardId' => $card->list->board_id,
+                ]
+            ];
         }
 
-        $cards = Card::find()
-            ->where(['list_id' => $listId])
-            ->all();
+        return $result;
+    }
 
-        return $this->asJson($cards);
+    public function findModel($id)
+    {
+        $model = Card::findOne($id);
+        if ($model === null) {
+            throw new \yii\web\NotFoundHttpException('Card not found');
+        }
+        return $model;
+    }
+
+    public function checkAccess($action, $model = null, $params = [])
+    {
+        $cardId = $model ? $model->id : Yii::$app->request->get('id');
+        $card = $model ?: Card::findOne($cardId);
+
+        if (in_array($action, ['view'])) {
+            if (!$card || !Yii::$app->boardAccessManager->canView($card->list->board_id, Yii::$app->user->id)) {
+                throw new \yii\web\ForbiddenHttpException('Access denied.');
+            }
+        }
+
+        if (in_array($action, ['update', 'delete'])) {
+            if (!$card || !Yii::$app->boardAccessManager->canEdit($card->list->board_id, Yii::$app->user->id)) {
+                throw new \yii\web\ForbiddenHttpException('Access denied.');
+            }
+        }
     }
 
     public function actionView($id)
     {
-        $userId = Yii::$app->user->id;
+        $model = $this->findModel($id);
+        $this->checkAccess('view', $model);
 
-        $card = Card::find()
-            ->joinWith(['list.board.boardAccesses'])
-            ->where(['cards.id' => $id])
-            ->andWhere([
-                'OR',
-                ['boards.user_id' => $userId],
-                ['board_accesses.user_id' => $userId]
-            ])
-            ->one();
-
-        if (!$card) {
-            Yii::$app->response->statusCode = 404;
-            return $this->asJson(['error' => 'Card not found or access denied']);
-        }
-
-        return $this->asJson($card);
+        $list = $model->list;
+        return [
+            'id' => $model->id,
+            'title' => $model->title,
+            'description' => $model->description,
+            'createdAt' => $model->created_at,
+            'ListId' => $model->list_id,
+            'List' => [
+                'id' => $list->id,
+                'title' => $list->title,
+                'BoardId' => $list->board_id,
+            ]
+        ];
     }
 
     public function actionCreate()
     {
         $userId = Yii::$app->user->id;
-        $data = Yii::$app->request->post();
-        $listId = $data['list_id'] ?? null;
+        $data = json_decode(Yii::$app->request->getRawBody(), true);
+        if (!$data) {
+            $data = Yii::$app->request->getBodyParams();
+        }
+        if (empty($data)) {
+            $data = Yii::$app->request->post();
+        }
+        $listId = $data['list'] ?? null;
 
         if (!$listId) {
-            Yii::$app->response->statusCode = 400;
-            return $this->asJson(['error' => 'list_id is required']);
+            throw new \yii\web\BadRequestHttpException('list is required.');
         }
 
-        // Check access through list's board
-        $list = \app\models\ListEntity::find()
-            ->joinWith(['board.boardAccesses'])
-            ->where(['lists.id' => $listId])
-            ->andWhere([
-                'OR',
-                ['boards.user_id' => $userId],
-                ['board_accesses.user_id' => $userId]
-            ])
-            ->one();
-
+        // Check if list exists and get it
+        $list = \app\models\ListEntity::findOne($listId);
         if (!$list) {
-            Yii::$app->response->statusCode = 404;
-            return $this->asJson(['error' => 'List not found or access denied']);
+            throw new \yii\web\NotFoundHttpException('List not found');
         }
 
+        // Check if user can create cards on this list's board
         if (!Yii::$app->boardAccessManager->canEdit($list->board_id, $userId)) {
-            Yii::$app->response->statusCode = 403;
-            return $this->asJson(['error' => 'Access denied']);
+            throw new \yii\web\ForbiddenHttpException('Access denied.');
         }
 
         $card = new Card();
         $card->load($data, '');
+        $card->list_id = $listId;
 
-        if ($card->validate() && $card->save()) {
+        if ($card->save()) {
+            $result = [
+                'id' => $card->id,
+                'title' => $card->title,
+                'description' => $card->description,
+                'createdAt' => $card->created_at,
+                'ListId' => $card->list_id
+            ];
             Yii::$app->response->statusCode = 201;
-            return $this->asJson($card);
+            return $result;
         } else {
-            Yii::$app->response->statusCode = 400;
-            return $this->asJson(['errors' => $card->errors]);
+            throw new \yii\web\BadRequestHttpException('Validation error');
         }
     }
 
     public function actionUpdate($id)
     {
-        $userId = Yii::$app->user->id;
-        $data = Yii::$app->request->post();
+        $model = $this->findModel($id);
+        $this->checkAccess('update', $model);
 
-        $card = Card::find()
-            ->joinWith(['list.board'])
-            ->where(['cards.id' => $id])
-            ->one();
+        $data = json_decode(Yii::$app->request->getRawBody(), true);
+        if (!$data) {
+            $data = Yii::$app->request->getBodyParams();
+        }
+        if (empty($data)) {
+            $data = Yii::$app->request->post();
+        }
+        $newListId = $data['list'] ?? null;
 
-        if (!$card) {
-            Yii::$app->response->statusCode = 404;
-            return $this->asJson(['error' => 'Card not found']);
+        // If changing list, check access to new list's board
+        if ($newListId && $newListId != $model->list_id) {
+            $newList = \app\models\ListEntity::findOne($newListId);
+            if (!$newList || !Yii::$app->boardAccessManager->canEdit($newList->board_id, Yii::$app->user->id)) {
+                throw new \yii\web\ForbiddenHttpException('Access denied to target list.');
+            }
+            $model->list_id = $newListId;
         }
 
-        // Check access
-        if (!Yii::$app->boardAccessManager->canEdit($card->list->board_id, $userId)) {
-            Yii::$app->response->statusCode = 403;
-            return $this->asJson(['error' => 'Access denied']);
-        }
-
-        $card->load($data, '');
-
-        if ($card->validate() && $card->save()) {
-            return $this->asJson($card);
+        $model->load($data, '');
+        if ($model->save()) {
+            $list = $model->list;
+            return [
+                'id' => $model->id,
+                'title' => $model->title,
+                'description' => $model->description,
+                'createdAt' => $model->created_at,
+                'ListId' => $model->list_id
+            ];
         } else {
-            Yii::$app->response->statusCode = 400;
-            return $this->asJson(['errors' => $card->errors]);
+            throw new \yii\web\BadRequestHttpException('Validation error: ' . implode(', ', $model->getErrorSummary(true)));
         }
     }
 
     public function actionDelete($id)
     {
-        $userId = Yii::$app->user->id;
+        $model = $this->findModel($id);
+        $this->checkAccess('delete', $model);
 
-        $card = Card::find()
-            ->joinWith(['list.board'])
-            ->where(['cards.id' => $id])
-            ->one();
-
-        if (!$card) {
-            Yii::$app->response->statusCode = 404;
-            return $this->asJson(['error' => 'Card not found']);
+        if ($model->delete()) {
+            Yii::$app->response->setStatusCode(200);
+            return ['message' => 'Card deleted'];
+        } else {
+            throw new \yii\web\ServerErrorHttpException('Failed to delete the card.');
         }
+    }
 
-        // Check access
-        if (!Yii::$app->boardAccessManager->canEdit($card->list->board_id, $userId)) {
-            Yii::$app->response->statusCode = 403;
-            return $this->asJson(['error' => 'Access denied']);
+    public function actionOptions()
+    {
+        if (Yii::$app->getRequest()->getMethod() !== 'OPTIONS') {
+            Yii::$app->getResponse()->setStatusCode(405);
         }
-
-        $card->delete();
-        return $this->asJson(['message' => 'Card deleted successfully']);
+        Yii::$app->getResponse()->getHeaders()->set('Allow', 'GET, POST, PUT, DELETE, HEAD, OPTIONS');
     }
 }
