@@ -133,7 +133,7 @@ def test_create_comment(token, card_id, text="Test comment text"):
     url = f"{BASE_URL}/comments"
     data = {
         "text": text,
-        "card_id": card_id
+        "cardId": card_id
     }
     headers = {
         "Authorization": f"Bearer {token}",

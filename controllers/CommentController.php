@@ -82,11 +82,11 @@ class CommentController extends Controller
     {
         $userId = Yii::$app->user->id;
         $data = Yii::$app->request->post();
-        $cardId = $data['card_id'] ?? null;
+        $cardId = $data['cardId'] ?? null;
 
         if (!$cardId) {
             $this->response->statusCode = 400;
-            return $this->asJson(['error' => 'card_id is required']);
+            return $this->asJson(['error' => 'cardId is required']);
         }
 
         // Check access through card's board
@@ -112,6 +112,7 @@ class CommentController extends Controller
 
         $comment = new Comment();
         $comment->load($data, '');
+        $comment->card_id = $cardId;
         $comment->user_id = $userId;
 
         if ($comment->validate() && $comment->save()) {
@@ -185,6 +186,6 @@ class CommentController extends Controller
         }
 
         $comment->delete();
-        return $this->asJson(['message' => 'Comment deleted successfully']);
+        return $this->asJson(['message' => 'Comment deleted']);
     }
 }

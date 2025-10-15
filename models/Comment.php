@@ -91,4 +91,20 @@ class Comment extends \yii\db\ActiveRecord
     {
         return $this->hasOne(User::class, ['id' => 'user_id']);
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function fields()
+    {
+        return [
+            'id' => 'id',
+            'text' => 'text',
+            'CardId' => 'card_id',
+            'UserId' => 'user_id',
+            'createdAt' => 'created_at',
+            'updatedAt' => 'updated_at',
+            'User' => 'user',
+        ];
+    }
 }
