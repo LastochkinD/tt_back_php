@@ -5,7 +5,6 @@ namespace app\controllers;
 use Yii;
 use app\models\User;
 use app\models\LoginForm;
-use Firebase\JWT\JWT;
 
 class AuthController extends \yii\rest\Controller
 {
@@ -59,17 +58,7 @@ class AuthController extends \yii\rest\Controller
 
             if ($validateResult) {
                 $user = $model->user;
-                $issuedAt = time();
-                $expirationTime = $issuedAt + 86400; // 1 day
-                $payload = [
-                    'iss' => 'task-tracker-backend',
-                    'aud' => 'task-tracker-frontend',
-                    'iat' => $issuedAt,
-                    'exp' => $expirationTime,
-                    'user_id' => $user->id,
-                    'email' => $user->email,
-                ];
-                $token = JWT::encode($payload, getenv('JWT_SECRET'), 'HS256');
+                $token = Yii::$app->jwt->generateToken($user->id);
 
                 // Вывод отладочной информации в консоль
                 Yii::info('User data from database: ' . json_encode($user->attributes), 'debug');
@@ -80,7 +69,7 @@ class AuthController extends \yii\rest\Controller
                         'email' => $user->email,
                         'name' => $user->name,
                     ],
-                    'token' => $token,
+                    'token' => (string) $token,
                     'debug' => $user->attributes, // Отладочная информация: данные пользователя из базы
                 ];
             } else {
@@ -102,17 +91,7 @@ class AuthController extends \yii\rest\Controller
             $data = Yii::$app->request->getBodyParams();
 
             if ($user->load($data, '') && $user->save()) {
-                $issuedAt = time();
-                $expirationTime = $issuedAt + (86400 * 90); // 90 days
-                $payload = [
-                    'iss' => 'task-tracker-backend',
-                    'aud' => 'task-tracker-frontend',
-                    'iat' => $issuedAt,
-                    'exp' => $expirationTime,
-                    'user_id' => $user->id,
-                    'email' => $user->email,
-                ];
-                $token = JWT::encode($payload, getenv('JWT_SECRET'), 'HS256');
+                $token = Yii::$app->jwt->generateToken($user->id);
 
                 Yii::$app->response->statusCode = 201;
 
@@ -122,7 +101,7 @@ class AuthController extends \yii\rest\Controller
                         'email' => $user->email,
                         'name' => $user->name,
                     ],
-                    'token' => $token,
+                    'token' => (string) $token,
                 ];
             }
             return ['message' => 'User already exists'];
