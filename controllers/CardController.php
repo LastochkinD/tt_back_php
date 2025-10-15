@@ -31,11 +31,11 @@ class CardController extends Controller
     public function actionIndex()
     {
         $userId = Yii::$app->user->id;
-        $listId = Yii::$app->request->get('list_id');
+        $listId = Yii::$app->request->get('list');
 
         if (!$listId) {
             Yii::$app->response->statusCode = 400;
-            return $this->asJson(['error' => 'list_id parameter is required']);
+            return $this->asJson(['error' => 'list parameter is required']);
         }
 
         // Check if user has access to the board through the list

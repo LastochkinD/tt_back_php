@@ -5,9 +5,21 @@ namespace app\controllers;
 use Yii;
 use yii\web\Controller;
 use app\models\ListEntity;
+use app\components\BoardAccessManager;
 
 class ListController extends Controller
 {
+    /**
+     * @var \app\components\BoardAccessManager
+     */
+    protected $boardAccessManager;
+
+    public function init()
+    {
+        parent::init();
+        $this->boardAccessManager = Yii::$app->get('boardAccessManager');
+    }
+
     public function behaviors()
     {
         return [
@@ -31,14 +43,23 @@ class ListController extends Controller
     public function actionIndex()
     {
         $userId = Yii::$app->user->id;
-        $boardId = Yii::$app->request->get('board_id');
+
+        // Handle both GET (query parameters) and POST (request data) methods
+        if (Yii::$app->request->isGet) {
+            $boardId = Yii::$app->request->get('board');
+        } elseif (Yii::$app->request->isPost) {
+            $data = Yii::$app->request->post();
+            $boardId = $data['board'] ?? $data['board_id'] ?? null;
+        } else {
+            return $this->asJson(['error' => 'Method not allowed'])->setStatusCode(405);
+        }
 
         if (!$boardId) {
-            return $this->asJson(['error' => 'board_id parameter is required'])->setStatusCode(400);
+            return $this->asJson(['error' => 'board parameter is required'])->setStatusCode(400);
         }
 
         // Check if user has access to the board
-        if (!Yii::$app->boardAccessManager->canView($boardId, $userId)) {
+        if (!$this->boardAccessManager->canView($boardId, $userId)) {
             return $this->asJson(['error' => 'Access denied'])->setStatusCode(403);
         }
 
@@ -74,14 +95,14 @@ class ListController extends Controller
     {
         $userId = Yii::$app->user->id;
         $data = Yii::$app->request->post();
-        $boardId = $data['board_id'] ?? null;
+        $boardId = $data['board'] ?? $data['board_id'] ?? null;
 
         if (!$boardId) {
-            return $this->asJson(['error' => 'board_id is required'])->setStatusCode(400);
+            return $this->asJson(['error' => 'board is required'])->setStatusCode(400);
         }
 
         // Check if user can create lists on this board
-        if (!Yii::$app->boardAccessManager->canEdit($boardId, $userId)) {
+        if (!$this->boardAccessManager->canEdit($boardId, $userId)) {
             return $this->asJson(['error' => 'Access denied'])->setStatusCode(403);
         }
 
@@ -110,7 +131,7 @@ class ListController extends Controller
         }
 
         // Check access
-        if (!Yii::$app->boardAccessManager->canEdit($list->board_id, $userId)) {
+        if (!$this->boardAccessManager->canEdit($list->board_id, $userId)) {
             return $this->asJson(['error' => 'Access denied'])->setStatusCode(403);
         }
 
@@ -137,7 +158,7 @@ class ListController extends Controller
         }
 
         // Check access
-        if (!Yii::$app->boardAccessManager->canEdit($list->board_id, $userId)) {
+        if (!$this->boardAccessManager->canEdit($list->board_id, $userId)) {
             return $this->asJson(['error' => 'Access denied'])->setStatusCode(403);
         }
 

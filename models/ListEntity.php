@@ -55,6 +55,21 @@ class ListEntity extends \yii\db\ActiveRecord
         ];
     }
 
+    public function fields()
+    {
+        return array_merge(parent::fields(), [
+            'BoardId' => 'board_id',
+            'createdAt' => 'created_at',
+        ]);
+    }
+
+    public function extraFields()
+    {
+        return array_merge(parent::extraFields(), [
+            'Board',
+        ]);
+    }
+
     /**
      * {@inheritdoc}
      */

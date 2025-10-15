@@ -17,6 +17,13 @@ use yii\base\NotSupportedException;
  */
 class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
 {
+    public $username;
+
+    public function __construct($config = [])
+    {
+        parent::__construct($config);
+        $this->username = $this->email; // Map email to username for compatibility
+    }
     const SCENARIO_REGISTER = 'register';
     const SCENARIO_UPDATE = 'update';
 
