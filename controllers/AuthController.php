@@ -6,7 +6,7 @@ use Yii;
 use app\models\User;
 use app\models\LoginForm;
 
-class AuthController extends \yii\web\Controller
+class AuthController extends \yii\rest\Controller
 {
     public function behaviors()
     {
