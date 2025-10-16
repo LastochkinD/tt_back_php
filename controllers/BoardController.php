@@ -283,17 +283,29 @@ class BoardController extends \yii\rest\ActiveController
         }
 
         $request = Yii::$app->request->post();
-        if (!isset($request['email']) || !isset($request['role'])) {
-            throw new \yii\web\BadRequestHttpException('email and role are required');
+
+        // Support both userId (legacy) and email (new) parameters
+        $userId = isset($request['userId']) ? $request['userId'] : null;
+        $email = isset($request['email']) ? $request['email'] : null;
+
+        if (!isset($request['role']) || (!$userId && !$email)) {
+            throw new \yii\web\BadRequestHttpException('role is required, and either userId or email must be provided');
         }
 
-        $email = $request['email'];
         $role = $request['role'];
 
-        // Find user by email
-        $user = \app\models\User::findOne(['email' => $email]);
-        if ($user === null) {
-            throw new \yii\web\NotFoundHttpException('User with this email not found');
+        // Find user by userId or email
+        $user = null;
+        if ($userId) {
+            $user = \app\models\User::findOne($userId);
+            if ($user === null) {
+                throw new \yii\web\NotFoundHttpException('User with this ID not found');
+            }
+        } elseif ($email) {
+            $user = \app\models\User::findOne(['email' => $email]);
+            if ($user === null) {
+                throw new \yii\web\NotFoundHttpException('User with this email not found');
+            }
         }
 
         // Check if user already has access
