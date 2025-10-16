@@ -297,6 +297,8 @@ export const useAuth = () => {
     "id": 1,
     "title": "Проект разработки",
     "description": "Основная доска для проекта",
+    "color": "#FF0000",
+    "iconId": 1,
     "userId": 1,
     "createdAt": "2025-01-01T12:00:00.000Z",
     "updatedAt": "2025-01-01T12:00:00.000Z",
