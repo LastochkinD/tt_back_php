@@ -12,9 +12,11 @@ $config = [
         'cors' => [
             'Origin' => ['*'],
             'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
+            'Access-Control-Request-Headers' => ['Content-Type', 'Authorization', 'X-Requested-With'],
             'Access-Control-Allow-Credentials' => false,
             'Access-Control-Max-Age' => 86400,
             'Access-Control-Allow-Headers' => ['Content-Type', 'Authorization', 'X-Requested-With'],
+            'Access-Control-Expose-Headers' => [''],
         ],
     ],
     'aliases' => [
@@ -60,6 +62,7 @@ $config = [
         'enablePrettyUrl' => true,
         'enableStrictParsing' => false,
         'showScriptName' => false,
+        'suffix' => '',
             'rules' => [
                 // Auth
                 'POST api/auth/register' => 'auth/register',
