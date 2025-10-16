@@ -82,7 +82,7 @@ class AuthController extends \yii\rest\Controller
                     'token' => (string) $token,
                 ];
             }
-            return ['message' => 'User already exists'];
+            return $user->getErrors();
         } catch (\Exception $e) {
             return ['message' => 'Database connection error: ' . $e->getMessage()];
         }
