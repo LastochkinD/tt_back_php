@@ -20,10 +20,7 @@ class BoardController extends \yii\rest\ActiveController
             'except' => ['options'],
         ];
 
-        // CORS
-        $behaviors['cors'] = [
-            'class' => \yii\filters\Cors::class,
-        ];
+        // Remove CORS from individual controllers to avoid conflicts with .htaccess
 
         return $behaviors;
     }
