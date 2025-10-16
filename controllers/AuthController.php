@@ -12,18 +12,7 @@ class AuthController extends \yii\rest\Controller
     {
         $behaviors = parent::behaviors();
 
-        // CORS
-        $behaviors['corsFilter'] = [
-            'class' => \yii\filters\Cors::class,
-            'cors' => [
-                'Origin' => ['https://tasktracker.timetocode.ru'],
-                'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'],
-                'Access-Control-Request-Headers' => ['Content-Type', 'Authorization', 'X-Requested-With'],
-                'Access-Control-Allow-Credentials' => false,
-                'Access-Control-Max-Age' => 86400,
-                'Access-Control-Allow-Headers' => ['Content-Type', 'Authorization', 'X-Requested-With'],
-            ],
-        ];
+
 
         $behaviors['contentNegotiator'] = [
             'class' => \yii\filters\ContentNegotiator::class,

@@ -7,15 +7,10 @@
 
 <IfModule mod_headers.c>
     Header always set Access-Control-Max-Age 86400
-    # Single origin for the main request
     Header always set Access-Control-Allow-Origin "https://tasktracker.timetocode.ru"
     Header always set Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS"
     Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, Accept, Origin"
     Header always set Access-Control-Allow-Credentials "false"
-
-    # Alternative origins for different environments
-    Header set Access-Control-Allow-Origin "http://localhost:3000" env=dev_mode
-    Header set Access-Control-Allow-Origin "*" env=test_mode
 </IfModule>
 
 # Handle preflight OPTIONS requests

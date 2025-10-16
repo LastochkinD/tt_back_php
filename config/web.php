@@ -53,8 +53,6 @@ $config = [
         'suffix' => '',
             'rules' => [
                 // Auth
-                'OPTIONS api/auth/register' => 'auth/options',
-                'OPTIONS api/auth/login' => 'auth/options',
                 'POST api/auth/register' => 'auth/register',
                 'POST api/auth/login' => 'auth/login',
 
