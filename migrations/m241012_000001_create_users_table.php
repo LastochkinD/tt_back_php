@@ -17,8 +17,8 @@ class m241012_000001_create_users_table extends Migration
             'email' => $this->string(255)->notNull()->unique(),
             'password' => $this->string(255)->notNull(),
             'name' => $this->string(255),
-            'created_at' => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
-            'updated_at' => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
+            'created_at' => $this->db->schema->createColumnSchemaBuilder('timestamptz')->defaultExpression('CURRENT_TIMESTAMP'),
+            'updated_at' => $this->db->schema->createColumnSchemaBuilder('timestamptz')->defaultExpression('CURRENT_TIMESTAMP'),
         ]);
     }
 

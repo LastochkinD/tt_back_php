@@ -17,8 +17,8 @@ class m241012_000005_create_cards_table extends Migration
             'title' => $this->string(255)->notNull(),
             'description' => $this->text(),
             'list_id' => $this->integer()->notNull(),
-            'created_at' => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
-            'updated_at' => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
+            'created_at' => $this->db->schema->createColumnSchemaBuilder('timestamptz')->defaultExpression('CURRENT_TIMESTAMP'),
+            'updated_at' => $this->db->schema->createColumnSchemaBuilder('timestamptz')->defaultExpression('CURRENT_TIMESTAMP'),
         ]);
 
         $this->addForeignKey(

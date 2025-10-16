@@ -23,8 +23,8 @@ class m241012_000003_create_board_access_table extends Migration
             'board_id' => $this->integer()->notNull(),
             'user_id' => $this->integer()->notNull(),
             'role' => "public.enum_board_accesses_role DEFAULT 'viewer'::public.enum_board_accesses_role NOT NULL",
-            'created_at' => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
-            'updated_at' => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
+            'created_at' => $this->db->schema->createColumnSchemaBuilder('timestamptz')->defaultExpression('CURRENT_TIMESTAMP'),
+            'updated_at' => $this->db->schema->createColumnSchemaBuilder('timestamptz')->defaultExpression('CURRENT_TIMESTAMP'),
         ]);
 
         $this->addForeignKey(

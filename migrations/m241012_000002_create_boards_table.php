@@ -17,8 +17,8 @@ class m241012_000002_create_boards_table extends Migration
             'title' => $this->string(255)->notNull(),
             'description' => $this->text(),
             'user_id' => $this->integer(),
-            'created_at' => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
-            'updated_at' => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
+            'created_at' => $this->db->schema->createColumnSchemaBuilder('timestamptz')->defaultExpression('CURRENT_TIMESTAMP'),
+            'updated_at' => $this->db->schema->createColumnSchemaBuilder('timestamptz')->defaultExpression('CURRENT_TIMESTAMP'),
         ]);
 
         $this->addForeignKey(
