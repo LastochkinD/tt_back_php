@@ -283,15 +283,21 @@ class BoardController extends \yii\rest\ActiveController
         }
 
         $request = Yii::$app->request->post();
-        if (!isset($request['userId']) || !isset($request['role'])) {
-            throw new \yii\web\BadRequestHttpException('userId and role are required');
+        if (!isset($request['email']) || !isset($request['role'])) {
+            throw new \yii\web\BadRequestHttpException('email and role are required');
         }
 
-        $userId = $request['userId'];
+        $email = $request['email'];
         $role = $request['role'];
 
+        // Find user by email
+        $user = \app\models\User::findOne(['email' => $email]);
+        if ($user === null) {
+            throw new \yii\web\NotFoundHttpException('User with this email not found');
+        }
+
         // Check if user already has access
-        $existingAccess = BoardAccess::findOne(['board_id' => $id, 'user_id' => $userId]);
+        $existingAccess = BoardAccess::findOne(['board_id' => $id, 'user_id' => $user->id]);
         if ($existingAccess !== null) {
             throw new \yii\web\BadRequestHttpException('User already has access to this board');
         }
@@ -299,7 +305,7 @@ class BoardController extends \yii\rest\ActiveController
         // Create new access record
         $access = new BoardAccess([
             'board_id' => $id,
-            'user_id' => $userId,
+            'user_id' => $user->id,
             'role' => $role,
         ]);
 

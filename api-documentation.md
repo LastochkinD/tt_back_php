@@ -539,7 +539,7 @@ export const useAuth = () => {
 **Request Body:**
 ```json
 {
-  "userId": 2,
+  "email": "editor@example.com",
   "role": "editor"
 }
 ```
@@ -580,6 +580,13 @@ export const useAuth = () => {
 ```json
 {
   "message": "User already has access to this board"
+}
+```
+
+**Error (400):**
+```json
+{
+  "message": "User with this email not found"
 }
 ```
 
@@ -833,6 +840,134 @@ const deleteBoard = async (boardId) => {
     }
   } catch (error) {
     console.error('Error deleting board:', error);
+    throw error;
+  }
+};
+```
+
+## Frontend Integration для Board Members
+
+### Получение участников доски
+
+```javascript
+// JavaScript/TypeScript
+const getBoardMembers = async (boardId) => {
+  const token = localStorage.getItem('authToken');
+
+  try {
+    const response = await fetch(`/api/boards/${boardId}/members`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      const members = await response.json();
+      return members;
+    } else {
+      throw new Error('Failed to fetch board members');
+    }
+  } catch (error) {
+    console.error('Error fetching board members:', error);
+    throw error;
+  }
+};
+```
+
+### Добавление участника к доске
+
+```javascript
+// JavaScript/TypeScript
+const addBoardMember = async (boardId, email, role) => {
+  const token = localStorage.getItem('authToken');
+
+  try {
+    const response = await fetch(`/api/boards/${boardId}/members`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: email,
+        role: role
+      })
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      return result;
+    } else {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to add board member');
+    }
+  } catch (error) {
+    console.error('Error adding board member:', error);
+    throw error;
+  }
+};
+```
+
+### Обновление роли участника
+
+```javascript
+// JavaScript/TypeScript
+const updateBoardMemberRole = async (boardId, memberId, newRole) => {
+  const token = localStorage.getItem('authToken');
+
+  try {
+    const response = await fetch(`/api/boards/${boardId}/members/${memberId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        role: newRole
+      })
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      return result;
+    } else {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update member role');
+    }
+  } catch (error) {
+    console.error('Error updating member role:', error);
+    throw error;
+  }
+};
+```
+
+### Удаление участника из доски
+
+```javascript
+// JavaScript/TypeScript
+const removeBoardMember = async (boardId, memberId) => {
+  const token = localStorage.getItem('authToken');
+
+  try {
+    const response = await fetch(`/api/boards/${boardId}/members/${memberId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      return result;
+    } else {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to remove board member');
+    }
+  } catch (error) {
+    console.error('Error removing board member:', error);
     throw error;
   }
 };
