@@ -7,19 +7,6 @@ $config = [
     'id' => 'basic',
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
-    'as corsFilter' => [
-        'class' => \yii\filters\Cors::class,
-        'cors' => [
-            'Origin' => ['https://tasktracker.timetocode.ru', 'http://localhost:3000', '*'],
-            'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'],
-            'Access-Control-Request-Headers' => ['*'],
-            'Access-Control-Allow-Credentials' => false,
-            'Access-Control-Max-Age' => 86400,
-            'Access-Control-Allow-Headers' => ['Content-Type', 'Authorization', 'X-Requested-With'],
-            'Access-Control-Allow-Methods' => ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'],
-            'Access-Control-Expose-Headers' => ['X-Pagination-Current-Page'],
-        ],
-    ],
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
         '@npm'   => '@vendor/npm-asset',
