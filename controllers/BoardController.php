@@ -284,27 +284,27 @@ class BoardController extends \yii\rest\ActiveController
 
         $request = Yii::$app->request->post();
 
-        // Support both userId (legacy) and email (new) parameters
+        // Поддержка как userId (legacy), так и email (новый способ)
         $userId = isset($request['userId']) ? $request['userId'] : null;
         $email = isset($request['email']) ? $request['email'] : null;
+        $role = isset($request['role']) ? $request['role'] : null;
 
-        if (!isset($request['role']) || (!$userId && !$email)) {
-            throw new \yii\web\BadRequestHttpException('role is required, and either userId or email must be provided');
+        // Проверка обязательных параметров
+        if (!$role || (!$userId && !$email)) {
+            throw new \yii\web\BadRequestHttpException('Необходимы role и либо userId, либо email');
         }
 
-        $role = $request['role'];
-
-        // Find user by email (preferred), or userId (legacy)
+        // Поиск пользователя по email (предпочтительно), или по userId (для обратной совместимости)
         $user = null;
-        if ($email) {
-            $user = \app\models\User::findOne(['email' => $email]);
+        if ($email && !empty(trim($email))) {
+            $user = \app\models\User::findOne(['email' => trim($email)]);
             if ($user === null) {
-                throw new \yii\web\NotFoundHttpException('User with this email not found');
+                throw new \yii\web\NotFoundHttpException('Пользователь с таким email не найден');
             }
         } elseif ($userId) {
             $user = \app\models\User::findOne($userId);
             if ($user === null) {
-                throw new \yii\web\NotFoundHttpException('User with this ID not found');
+                throw new \yii\web\NotFoundHttpException('Пользователь с таким ID не найден');
             }
         }
 

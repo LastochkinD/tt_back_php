@@ -511,7 +511,7 @@ export const useAuth = () => {
     "role": "editor",
     "user": {
       "id": 2,
-      "email": "editor@example.com",
+"email": "user@example.com",
       "name": "Editor User"
     }
   }
@@ -587,6 +587,13 @@ export const useAuth = () => {
 ```json
 {
   "message": "User with this email not found"
+}
+```
+
+**Error (400):**
+```json
+{
+  "message": "User with this ID not found"
 }
 ```
 
