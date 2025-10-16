@@ -16,12 +16,13 @@ class AuthController extends \yii\rest\Controller
         $behaviors['corsFilter'] = [
             'class' => \yii\filters\Cors::class,
             'cors' => [
-                'Origin' => ['*'],
+                'Origin' => ['https://tasktracker.timetocode.ru', 'http://localhost:3000', '*'],
                 'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'],
                 'Access-Control-Request-Headers' => ['*'],
                 'Access-Control-Allow-Credentials' => false,
                 'Access-Control-Max-Age' => 86400,
                 'Access-Control-Allow-Headers' => ['Content-Type', 'Authorization', 'X-Requested-With'],
+                'Access-Control-Allow-Methods' => ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'],
             ],
         ];
 
@@ -32,6 +33,12 @@ class AuthController extends \yii\rest\Controller
             ],
         ];
         return $behaviors;
+    }
+
+    public function actionOptions()
+    {
+        Yii::$app->response->statusCode = 200;
+        return [];
     }
 
     public function actionLogin()
