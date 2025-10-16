@@ -363,7 +363,9 @@ export const useAuth = () => {
 ```json
 {
   "title": "Название доски",
-  "description": "Описание доски (необязательно)"
+  "description": "Описание доски (необязательно)",
+  "color": "#FF0000",
+  "iconId": 1
 }
 ```
 

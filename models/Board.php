@@ -10,6 +10,8 @@ use Yii;
  * @property int $id
  * @property string $title
  * @property string|null $description
+ * @property string|null $color
+ * @property int|null $icon_id
  * @property int|null $user_id
  * @property string $created_at
  * @property string $updated_at
@@ -47,6 +49,9 @@ class Board extends \yii\db\ActiveRecord
         return [
             [['title'], 'required'],
             [['description'], 'string'],
+            [['color'], 'string', 'max' => 7],
+            [['color'], 'match', 'pattern' => '/^#[0-9A-Fa-f]{6}$/', 'message' => 'Color must be a valid hex color code (e.g., #FF0000)'],
+            [['icon_id'], 'integer'],
             [['user_id'], 'integer'],
             [['created_at', 'updated_at'], 'safe'],
             [['title'], 'string', 'max' => 255],
@@ -63,6 +68,8 @@ class Board extends \yii\db\ActiveRecord
             'id' => 'ID',
             'title' => 'Title',
             'description' => 'Description',
+            'color' => 'Color',
+            'icon_id' => 'Icon ID',
             'user_id' => 'Owner ID',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
