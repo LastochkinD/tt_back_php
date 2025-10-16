@@ -10,12 +10,23 @@ class CommentController extends Controller
 {
     public function behaviors()
     {
-        return [
-            // CORS handled by .htaccess to avoid conflicts
-            'authFilter' => [
-                'class' => \app\filters\AuthFilter::class,
+        $behaviors = parent::behaviors();
+
+        $behaviors['contentNegotiator'] = [
+            'class' => \yii\filters\ContentNegotiator::class,
+            'formats' => [
+                'application/json' => \yii\web\Response::FORMAT_JSON,
             ],
         ];
+
+        // CORS handled by .htaccess to avoid conflicts
+        // Auth filter for comments (except options)
+        $behaviors['authFilter'] = [
+            'class' => \app\filters\AuthFilter::class,
+            'except' => ['options'],
+        ];
+
+        return $behaviors;
     }
 
     public function actionCardComments($cardId)
