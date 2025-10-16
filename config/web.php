@@ -62,6 +62,10 @@ $config = [
                 'POST api/boards' => 'board/create',
                 'PUT api/boards/<id>' => 'board/update',
                 'DELETE api/boards/<id>' => 'board/delete',
+                'GET api/boards/<id>/members' => 'board/members',
+                'POST api/boards/<id>/members' => 'board/add-member',
+                'PUT api/boards/<id>/members/<memberId>' => 'board/update-member',
+                'DELETE api/boards/<id>/members/<memberId>' => 'board/remove-member',
 
                 // Lists
                 'GET api/lists' => 'list/index',

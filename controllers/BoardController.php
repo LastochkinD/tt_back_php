@@ -214,6 +214,215 @@ class BoardController extends \yii\rest\ActiveController
         }
     }
 
+    public function actionMembers($id)
+    {
+        // Check if board exists and user has access
+        $board = $this->findModel($id);
+        $this->checkAccess('view', $board);
+
+        // Get all board access entries for this board
+        $accesses = BoardAccess::find()
+            ->where(['board_id' => $id])
+            ->with('user')
+            ->all();
+
+        // Format response
+        $members = [];
+        foreach ($accesses as $access) {
+            $members[] = [
+                'id' => $access->id,
+                'role' => $access->role,
+                'user' => [
+                    'id' => $access->user->id,
+                    'email' => $access->user->email,
+                    'name' => $access->user->name,
+                ],
+            ];
+        }
+
+        // Include board owner if not already in members
+        $ownerExists = false;
+        foreach ($members as $member) {
+            if ($member['user']['id'] === $board->user_id) {
+                $ownerExists = true;
+                break;
+            }
+        }
+
+        if (!$ownerExists) {
+            $members[] = [
+                'id' => null,
+                'role' => BoardAccess::ROLE_ADMIN,
+                'user' => [
+                    'id' => $board->owner->id,
+                    'email' => $board->owner->email,
+                    'name' => $board->owner->name,
+                ],
+            ];
+        }
+
+        return $members;
+    }
+
+    public function actionAddMember($id)
+    {
+        // Check if board exists and user has admin access
+        $board = $this->findModel($id);
+
+        // Check if current user is admin (owner or admin role)
+        $currentUserId = Yii::$app->user->id;
+        $isOwner = ($board->user_id === $currentUserId);
+        $hasAdminRole = BoardAccess::find()->where([
+            'board_id' => $id,
+            'user_id' => $currentUserId,
+            'role' => BoardAccess::ROLE_ADMIN
+        ])->exists();
+
+        if (!$isOwner && !$hasAdminRole) {
+            throw new \yii\web\ForbiddenHttpException('Only administrators can manage board access');
+        }
+
+        $request = Yii::$app->request->post();
+        if (!isset($request['userId']) || !isset($request['role'])) {
+            throw new \yii\web\BadRequestHttpException('userId and role are required');
+        }
+
+        $userId = $request['userId'];
+        $role = $request['role'];
+
+        // Check if user already has access
+        $existingAccess = BoardAccess::findOne(['board_id' => $id, 'user_id' => $userId]);
+        if ($existingAccess !== null) {
+            throw new \yii\web\BadRequestHttpException('User already has access to this board');
+        }
+
+        // Create new access record
+        $access = new BoardAccess([
+            'board_id' => $id,
+            'user_id' => $userId,
+            'role' => $role,
+        ]);
+
+        if ($access->save()) {
+            Yii::$app->response->statusCode = 201;
+            return [
+                'message' => 'User added to board',
+                'access' => [
+                    'id' => $access->id,
+                    'role' => $access->role,
+                    'user' => [
+                        'id' => $access->user->id,
+                        'email' => $access->user->email,
+                        'name' => $access->user->name,
+                    ],
+                ],
+            ];
+        }
+
+        return $access;
+    }
+
+    public function actionUpdateMember($id, $memberId)
+    {
+        // Check if board exists
+        $board = $this->findModel($id);
+
+        // Check admin access
+        $currentUserId = Yii::$app->user->id;
+        $isOwner = ($board->user_id === $currentUserId);
+        $hasAdminRole = BoardAccess::find()->where([
+            'board_id' => $id,
+            'user_id' => $currentUserId,
+            'role' => BoardAccess::ROLE_ADMIN
+        ])->exists();
+
+        if (!$isOwner && !$hasAdminRole) {
+            throw new \yii\web\ForbiddenHttpException('Only administrators can manage board access');
+        }
+
+        // Find access record
+        $access = BoardAccess::findOne($memberId);
+        if ($access === null || $access->board_id !== (int)$id) {
+            throw new \yii\web\NotFoundHttpException('Access record not found');
+        }
+
+        $request = Yii::$app->request->post();
+        if (!isset($request['role'])) {
+            throw new \yii\web\BadRequestHttpException('role is required');
+        }
+
+        $access->role = $request['role'];
+
+        if ($access->save()) {
+            return [
+                'message' => 'Member role updated',
+                'access' => [
+                    'id' => $access->id,
+                    'role' => $access->role,
+                    'user' => [
+                        'id' => $access->user->id,
+                        'email' => $access->user->email,
+                        'name' => $access->user->name,
+                    ],
+                ],
+            ];
+        }
+
+        return $access;
+    }
+
+    public function actionRemoveMember($id, $memberId)
+    {
+        // Check if board exists
+        $board = $this->findModel($id);
+
+        // Check admin access
+        $currentUserId = Yii::$app->user->id;
+        $isOwner = ($board->user_id === $currentUserId);
+        $hasAdminRole = BoardAccess::find()->where([
+            'board_id' => $id,
+            'user_id' => $currentUserId,
+            'role' => BoardAccess::ROLE_ADMIN
+        ])->exists();
+
+        if (!$isOwner && !$hasAdminRole) {
+            throw new \yii\web\ForbiddenHttpException('Only administrators can manage board access');
+        }
+
+        // Find access record
+        $access = BoardAccess::findOne($memberId);
+        if ($access === null || $access->board_id !== (int)$id) {
+            throw new \yii\web\NotFoundHttpException('Access record not found');
+        }
+
+        // Check if it's the last admin (can't remove last admin)
+        if ($access->role === BoardAccess::ROLE_ADMIN) {
+            $adminCount = BoardAccess::find()->where([
+                'board_id' => $id,
+                'role' => BoardAccess::ROLE_ADMIN
+            ])->count();
+
+            // If owner has access record with admin role, count as admin
+            $ownerHasAccess = BoardAccess::find()->where([
+                'board_id' => $id,
+                'user_id' => $board->user_id,
+                'role' => BoardAccess::ROLE_ADMIN
+            ])->exists();
+
+            $totalAdmins = $adminCount + ($board->user_id !== $access->user_id && $ownerHasAccess ? 1 : 0);
+
+            if ($totalAdmins <= 1 && !$ownerHasAccess) {
+                throw new \yii\web\BadRequestHttpException('Cannot remove the last administrator from the board');
+            }
+        }
+
+        if ($access->delete() !== false) {
+            return ['message' => 'Member removed from board'];
+        }
+
+        throw new \yii\web\ServerErrorHttpException('Failed to remove member');
+    }
+
     public function actionOptions()
     {
         Yii::$app->response->statusCode = 200;
