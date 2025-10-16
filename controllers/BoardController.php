@@ -294,17 +294,17 @@ class BoardController extends \yii\rest\ActiveController
 
         $role = $request['role'];
 
-        // Find user by userId or email
+        // Find user by email (preferred), or userId (legacy)
         $user = null;
-        if ($userId) {
-            $user = \app\models\User::findOne($userId);
-            if ($user === null) {
-                throw new \yii\web\NotFoundHttpException('User with this ID not found');
-            }
-        } elseif ($email) {
+        if ($email) {
             $user = \app\models\User::findOne(['email' => $email]);
             if ($user === null) {
                 throw new \yii\web\NotFoundHttpException('User with this email not found');
+            }
+        } elseif ($userId) {
+            $user = \app\models\User::findOne($userId);
+            if ($user === null) {
+                throw new \yii\web\NotFoundHttpException('User with this ID not found');
             }
         }
 
