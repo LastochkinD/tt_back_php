@@ -235,9 +235,7 @@ class ListController extends \yii\rest\ActiveController
 
     public function actionOptions()
     {
-        if (Yii::$app->getRequest()->getMethod() !== 'OPTIONS') {
-            Yii::$app->getResponse()->setStatusCode(405);
-        }
-        Yii::$app->getResponse()->getHeaders()->set('Allow', 'GET, POST, PUT, DELETE, HEAD, OPTIONS');
+        Yii::$app->response->statusCode = 200;
+        return [];
     }
 }

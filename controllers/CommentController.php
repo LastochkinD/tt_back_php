@@ -188,4 +188,10 @@ class CommentController extends Controller
         $comment->delete();
         return $this->asJson(['message' => 'Comment deleted']);
     }
+
+    public function actionOptions()
+    {
+        Yii::$app->response->statusCode = 200;
+        return [];
+    }
 }

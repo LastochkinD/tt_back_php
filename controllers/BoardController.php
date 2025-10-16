@@ -216,4 +216,10 @@ class BoardController extends \yii\rest\ActiveController
             Yii::$app->response->setStatusCode(204);
         }
     }
+
+    public function actionOptions()
+    {
+        Yii::$app->response->statusCode = 200;
+        return [];
+    }
 }

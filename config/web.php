@@ -53,10 +53,13 @@ $config = [
         'suffix' => '',
             'rules' => [
                 // Auth
+                'OPTIONS api/auth/register' => 'auth/options',
+                'OPTIONS api/auth/login' => 'auth/options',
                 'POST api/auth/register' => 'auth/register',
                 'POST api/auth/login' => 'auth/login',
 
                 // Boards
+                'OPTIONS api/boards' => 'board/options',
                 'GET api/boards' => 'board/index',
                 'GET api/boards/<id>' => 'board/view',
                 'POST api/boards' => 'board/create',
@@ -64,6 +67,7 @@ $config = [
                 'DELETE api/boards/<id>' => 'board/delete',
 
                 // Lists
+                'OPTIONS api/lists' => 'list/options',
                 'GET api/lists' => 'list/index',
                 'POST api/lists' => 'list/create',
                 'GET api/lists/<id>' => 'list/view',
@@ -71,6 +75,7 @@ $config = [
                 'DELETE api/lists/<id>' => 'list/delete',
 
                 // Cards
+                'OPTIONS api/cards' => 'card/options',
                 'GET api/cards' => 'card/index',
                 'GET api/cards/<id>' => 'card/view',
                 'POST api/cards' => 'card/create',
@@ -78,6 +83,7 @@ $config = [
                 'DELETE api/cards/<id>' => 'card/delete',
 
                 // Comments
+                'OPTIONS api/comments' => 'comment/options',
                 'GET api/comments/card/<cardId>' => 'comment/card-comments',
                 'GET api/comments/<id>' => 'comment/view',
                 'POST api/comments' => 'comment/create',
