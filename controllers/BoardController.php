@@ -38,14 +38,33 @@ class BoardController extends \yii\rest\ActiveController
     {
         $userId = Yii::$app->user->id;
 
-        // Get boards where user is owner (since board_access table may not exist)
+        // Get boards where user is owner or has access via board_access table
         $boards = Board::find()
-            ->where(['user_id' => $userId])
+            ->leftJoin('board_accesses', 'boards.id = board_accesses.board_id AND board_accesses.user_id = :userId', [':userId' => $userId])
+            ->where(['or',
+                ['boards.user_id' => $userId],
+                ['board_accesses.user_id' => $userId]
+            ])
+            ->with('owner')
             ->all();
 
         $result = [];
         foreach ($boards as $board) {
-            // For current implementation, all users are admin for all boards
+            $userRole = BoardAccess::ROLE_VIEWER;
+            $accessId = null;
+
+            // If user is owner, they have admin role
+            if ($board->user_id == $userId) {
+                $userRole = BoardAccess::ROLE_ADMIN;
+            } else {
+                // Get user's access from board_access table
+                $access = BoardAccess::findOne(['board_id' => $board->id, 'user_id' => $userId]);
+                if ($access) {
+                    $userRole = $access->role;
+                    $accessId = $access->id;
+                }
+            }
+
             $result[] = [
                 'id' => $board->id,
                 'title' => $board->title,
@@ -58,8 +77,8 @@ class BoardController extends \yii\rest\ActiveController
                     'email' => $board->owner->email,
                     'name' => $board->owner->name,
                 ],
-                'userRole' => BoardAccess::ROLE_ADMIN,
-                'accessId' => null,
+                'userRole' => $userRole,
+                'accessId' => $accessId,
             ];
         }
 
