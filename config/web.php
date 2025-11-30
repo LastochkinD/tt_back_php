@@ -87,6 +87,10 @@ $config = [
                 'POST api/comments' => 'comment/create',
                 'PUT api/comments/<id>' => 'comment/update',
                 'DELETE api/comments/<id>' => 'comment/delete',
+
+                // Users
+                'GET api/users' => 'user/index',
+                'GET api/users/<id>' => 'user/view',
             ],
         ],
         'jwt' => [
