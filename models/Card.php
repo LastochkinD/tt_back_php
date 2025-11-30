@@ -56,7 +56,6 @@ class Card extends \yii\db\ActiveRecord
             [['created_at', 'updated_at'], 'safe'],
             [['title'], 'string', 'max' => 255],
             [['list_id'], 'exist', 'skipOnError' => true, 'targetClass' => ListEntity::class, 'targetAttribute' => ['list_id' => 'id']],
-            [['assignee_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['assignee_id' => 'id']],
         ];
     }
 
