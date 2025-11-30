@@ -149,6 +149,12 @@ class CardController extends \yii\rest\ActiveController
         if (empty($data)) {
             $data = Yii::$app->request->post();
         }
+
+        // Map assigneeId to assignee_id for model loading
+        if (isset($data['assigneeId'])) {
+            $data['assignee_id'] = $data['assigneeId'];
+        }
+
         $listId = $data['list'] ?? null;
 
         if (!$listId) {
@@ -203,6 +209,12 @@ class CardController extends \yii\rest\ActiveController
         if (empty($data)) {
             $data = Yii::$app->request->post();
         }
+
+        // Map assigneeId to assignee_id for model loading
+        if (isset($data['assigneeId'])) {
+            $data['assignee_id'] = $data['assigneeId'];
+        }
+
         $newListId = $data['list'] ?? null;
 
         // If changing list, check access to new list's board
