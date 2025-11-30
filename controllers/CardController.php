@@ -206,12 +206,18 @@ class CardController extends \yii\rest\ActiveController
             'starting_assignee_id' => $model->assignee_id ?: null
         ];
 
-        $data = Yii::$app->request->post();
-        if (empty($data)) {
-            $data = json_decode(Yii::$app->request->getRawBody(), true);
-        }
+        // Get request data - use JSON decoding for PUT requests
+        $rawBody = Yii::$app->request->getRawBody();
+        $debug['raw_body'] = $rawBody;
+        $data = json_decode($rawBody, true);
+        $debug['json_decoded_data'] = $data;
+
+        // Fallback to post data if JSON decoding fails
         if (!$data) {
-            $data = Yii::$app->request->getBodyParams();
+            $data = Yii::$app->request->post();
+            $debug['fallback_post_data'] = $data;
+        } else {
+            $debug['fallback_post_data'] = null;
         }
 
         $debug['received_data'] = $data;
