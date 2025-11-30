@@ -13,6 +13,11 @@ class CardController extends \yii\rest\ActiveController
     {
         $behaviors = parent::behaviors();
 
+        // JSON Parser
+        $behaviors['parsers'] = [
+            'application/json' => \yii\web\JsonParser::class,
+        ];
+
         // JWT Authentication
         $behaviors['authenticator'] = [
             'class' => \app\filters\AuthFilter::class,
@@ -142,12 +147,12 @@ class CardController extends \yii\rest\ActiveController
     public function actionCreate()
     {
         $userId = Yii::$app->user->id;
-        $data = json_decode(Yii::$app->request->getRawBody(), true);
+        $data = Yii::$app->request->post();
+        if (empty($data)) {
+            $data = json_decode(Yii::$app->request->getRawBody(), true);
+        }
         if (!$data) {
             $data = Yii::$app->request->getBodyParams();
-        }
-        if (empty($data)) {
-            $data = Yii::$app->request->post();
         }
 
         // Map assigneeId to assignee_id for model loading
@@ -202,12 +207,12 @@ class CardController extends \yii\rest\ActiveController
         $model = $this->findModel($id);
         $this->checkAccess('update', $model);
 
-        $data = json_decode(Yii::$app->request->getRawBody(), true);
+        $data = Yii::$app->request->post();
+        if (empty($data)) {
+            $data = json_decode(Yii::$app->request->getRawBody(), true);
+        }
         if (!$data) {
             $data = Yii::$app->request->getBodyParams();
-        }
-        if (empty($data)) {
-            $data = Yii::$app->request->post();
         }
 
         // Map assigneeId to assignee_id for model loading
@@ -241,11 +246,7 @@ class CardController extends \yii\rest\ActiveController
                 'description' => $model->description,
                 'assigneeId' => $model->assignee_id,
                 'createdAt' => $model->created_at,
-                'ListId' => $model->list_id,
-                'debug' => $data,
-                'debug1' => isset($data['assigneeId']),
-                'debug2' => $data['assignee_id'] ?? null,
-                'debug3' => $model->assignee_id
+                'ListId' => $model->list_id
             ];
         } else {
             throw new \yii\web\BadRequestHttpException('Validation error: ' . implode(', ', $model->getErrorSummary(true)));
