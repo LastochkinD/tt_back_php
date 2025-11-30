@@ -7,7 +7,7 @@ return [
     'password' => 'Samara2025',
     'charset' => 'UTF8',
     'tablePrefix' => '',
-    'enableSchemaCache' => true,
+    'enableSchemaCache' => false,
     'schemaCacheDuration' => 3600,
     'schemaCache' => 'cache',
 ];
