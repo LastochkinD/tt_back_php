@@ -241,7 +241,11 @@ class CardController extends \yii\rest\ActiveController
                 'description' => $model->description,
                 'assigneeId' => $model->assignee_id,
                 'createdAt' => $model->created_at,
-                'ListId' => $model->list_id
+                'ListId' => $model->list_id,
+                'debug' => $data,
+                'debug1' => isset($data['assigneeId']),
+                'debug2' => $data['assignee_id'] ?? null,
+                'debug3' => $model->assignee_id
             ];
         } else {
             throw new \yii\web\BadRequestHttpException('Validation error: ' . implode(', ', $model->getErrorSummary(true)));
