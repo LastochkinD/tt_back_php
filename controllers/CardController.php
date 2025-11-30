@@ -13,11 +13,6 @@ class CardController extends \yii\rest\ActiveController
     {
         $behaviors = parent::behaviors();
 
-        // JSON Parser
-        $behaviors['parsers'] = [
-            'application/json' => \yii\web\JsonParser::class,
-        ];
-
         // JWT Authentication
         $behaviors['authenticator'] = [
             'class' => \app\filters\AuthFilter::class,
