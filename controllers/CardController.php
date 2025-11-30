@@ -202,7 +202,9 @@ class CardController extends \yii\rest\ActiveController
         $model = $this->findModel($id);
         $this->checkAccess('update', $model);
 
-        Yii::trace("Starting update for card {$id}. Current assignee_id: " . ($model->assignee_id ?: 'null'), __METHOD__);
+        $debug = [
+            'starting_assignee_id' => $model->assignee_id ?: null
+        ];
 
         $data = Yii::$app->request->post();
         if (empty($data)) {
@@ -212,12 +214,15 @@ class CardController extends \yii\rest\ActiveController
             $data = Yii::$app->request->getBodyParams();
         }
 
-        Yii::trace("Received request data: " . json_encode($data), __METHOD__);
+        $debug['received_data'] = $data;
 
         // Map assigneeId to assignee_id for model loading
         if (isset($data['assigneeId'])) {
             $data['assignee_id'] = $data['assigneeId'];
-            Yii::trace("Mapped assigneeId {$data['assigneeId']} to assignee_id", __METHOD__);
+            $debug['assigneeId_mapped'] = true;
+            $debug['original_assigneeId_value'] = $data['assigneeId'];
+        } else {
+            $debug['assigneeId_mapped'] = false;
         }
 
         $newListId = $data['list'] ?? null;
@@ -232,19 +237,24 @@ class CardController extends \yii\rest\ActiveController
         }
 
         $loaded = $model->load($data, '');
-        Yii::trace("Model load result: " . ($loaded ? 'success' : 'failed') . ". Model attributes: " . json_encode($model->attributes), __METHOD__);
+        $debug['model_load_success'] = $loaded;
+        $debug['model_attributes_after_load'] = $model->attributes;
 
         if ($model->assignee_id && !$model->validateAssignee()) {
-            Yii::trace("Assignee validation failed for assignee_id: {$model->assignee_id}", __METHOD__);
+            $debug['assignee_validation_failed'] = true;
+            $debug['assignee_id_during_validation'] = $model->assignee_id;
              throw new \yii\web\BadRequestHttpException('Assignee does not have access to this board');
          }
+        $debug['assignee_validation_passed'] = true;
 
-        Yii::trace("Before save - assignee_id: " . ($model->assignee_id ?: 'null'), __METHOD__);
+        $debug['assignee_id_before_save'] = $model->assignee_id ?: null;
 
         if ($model->save()) {
-            Yii::trace("Save successful. New assignee_id: " . ($model->assignee_id ?: 'null'), __METHOD__);
+            $debug['save_success'] = true;
+            $debug['assignee_id_after_save'] = $model->assignee_id ?: null;
             $list = $model->list;
             $result = [
+                'debug' => $debug,
                 'id' => $model->id,
                 'title' => $model->title,
                 'description' => $model->description,
@@ -252,11 +262,11 @@ class CardController extends \yii\rest\ActiveController
                 'createdAt' => $model->created_at,
                 'ListId' => $model->list_id
             ];
-            Yii::trace("Returning result: " . json_encode($result), __METHOD__);
             return $result;
         } else {
-            Yii::trace("Save failed. Errors: " . json_encode($model->errors), __METHOD__);
-            throw new \yii\web\BadRequestHttpException('Validation error: ' . implode(', ', $model->getErrorSummary(true)));
+            $debug['save_success'] = false;
+            $debug['model_errors'] = $model->errors;
+            throw new \yii\web\BadRequestHttpException('Validation error: ' . implode(', ', $model->getErrorSummary(true)) . ' [Debug: ' . json_encode($debug) . ']');
         }
     }
 
