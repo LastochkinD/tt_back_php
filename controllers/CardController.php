@@ -77,6 +77,7 @@ class CardController extends \yii\rest\ActiveController
                 'id' => $card->id,
                 'title' => $card->title,
                 'description' => $card->description,
+                'assigneeId' => $card->assignee_id,
                 'createdAt' => $card->created_at,
                 'ListId' => $card->list_id,
                 'List' => [
@@ -127,6 +128,7 @@ class CardController extends \yii\rest\ActiveController
             'id' => $model->id,
             'title' => $model->title,
             'description' => $model->description,
+            'assigneeId' => $model->assignee_id,
             'createdAt' => $model->created_at,
             'ListId' => $model->list_id,
             'List' => [
@@ -168,11 +170,17 @@ class CardController extends \yii\rest\ActiveController
         $card->load($data, '');
         $card->list_id = $listId;
 
+        // Validate assignee_id if provided
+        if ($card->assignee_id && !$card->validateAssignee()) {
+            throw new \yii\web\BadRequestHttpException('Assignee does not have access to this board');
+        }
+
         if ($card->save()) {
             $result = [
                 'id' => $card->id,
                 'title' => $card->title,
                 'description' => $card->description,
+                'assigneeId' => $card->assignee_id,
                 'createdAt' => $card->created_at,
                 'ListId' => $card->list_id
             ];
@@ -207,12 +215,19 @@ class CardController extends \yii\rest\ActiveController
         }
 
         $model->load($data, '');
+
+        // Validate assignee_id if provided
+        if ($model->assignee_id && !$model->validateAssignee()) {
+            throw new \yii\web\BadRequestHttpException('Assignee does not have access to this board');
+        }
+
         if ($model->save()) {
             $list = $model->list;
             return [
                 'id' => $model->id,
                 'title' => $model->title,
                 'description' => $model->description,
+                'assigneeId' => $model->assignee_id,
                 'createdAt' => $model->created_at,
                 'ListId' => $model->list_id
             ];

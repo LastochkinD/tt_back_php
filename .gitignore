@@ -1,3 +1,18 @@
+# From original repository
+assets/*
+!assets/.gitignore
+protected/runtime/*
+!protected/runtime/.gitignore
+protected/data/*.db
+themes/classic/views/
+
+cache/
+output/
+public_html_bak_*/
+keys.*.pub
+docker-compose.yml
+public_html
+
 # Composer
 /vendor/*
 !vendor/**/.gitignore
