@@ -118,6 +118,12 @@ class CardController extends Controller
         $card = new Card();
         $card->load($data, '');
 
+        // Validate assignee_id if provided
+        if ($card->assignee_id && !$card->validateAssignee()) {
+            Yii::$app->response->statusCode = 400;
+            return $this->asJson(['error' => 'Assignee does not have access to this board']);
+        }
+
         if ($card->validate() && $card->save()) {
             Yii::$app->response->statusCode = 201;
             return $this->asJson($card);
@@ -149,6 +155,12 @@ class CardController extends Controller
         }
 
         $card->load($data, '');
+
+        // Validate assignee_id if provided
+        if ($card->assignee_id && !$card->validateAssignee()) {
+            Yii::$app->response->statusCode = 400;
+            return $this->asJson(['error' => 'Assignee does not have access to this board']);
+        }
 
         if ($card->validate() && $card->save()) {
             return $this->asJson($card);
