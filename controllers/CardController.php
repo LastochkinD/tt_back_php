@@ -229,9 +229,9 @@ class CardController extends \yii\rest\ActiveController
         $model->load($data, '');
 
         // Validate assignee_id if provided
-        if ($model->assignee_id && !$model->validateAssignee()) {
-            throw new \yii\web\BadRequestHttpException('Assignee does not have access to this board');
-        }
+        // if ($model->assignee_id && !$model->validateAssignee()) {
+        //     throw new \yii\web\BadRequestHttpException('Assignee does not have access to this board');
+        // }
 
         if ($model->save()) {
             $list = $model->list;
