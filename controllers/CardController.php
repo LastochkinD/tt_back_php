@@ -15,9 +15,7 @@ class CardController extends \yii\rest\ActiveController
 
         // JSON Parser
         $behaviors['parsers'] = [
-            'application/json' => [
-                'class' => \yii\web\JsonParser::class,
-            ],
+            'application/json' => \yii\web\JsonParser::class,
         ];
 
         // JWT Authentication
